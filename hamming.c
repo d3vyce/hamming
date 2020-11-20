@@ -1,11 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "hamming.h"
 
-typedef struct Matrice {
-    int x;
-    int y;
-    int **Matrice;
-}Matrice;
 
 Matrice MatriceVide(int n, int m) {
     Matrice *A;
