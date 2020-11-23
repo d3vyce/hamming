@@ -12,5 +12,4 @@ void DisplayMatrice(Matrice A);
 Matrice LireMatrice(const char * nom, Matrice A);
 Matrice Control(Matrice A);
 Matrice Transpose(Matrice Acontrol);
-void MotCode(Matrice A, Matrice H);
-void Syndrome(Matrice H);
+int MotCode(Matrice A, Matrice H);

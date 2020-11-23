@@ -78,10 +78,12 @@ Matrice Transpose(Matrice Acontrol) {
     return H;
 }
 
-void MotCode(Matrice A, Matrice H) {
+int MotCode(Matrice A, Matrice H) {
     long int binary = 0;
-    int ligne = 2, i, j, remainder, k, result = 0, w;
+    int ligne = 2, i, j, remainder, k, result = 0, w, z, distance = 0;;
+    int distance_min = 99;
     int l0, l1, l2, l3;
+    int mot[7];
 
     for (i=1 ; i<A.x ; ++i) ligne = ligne*2;
 
@@ -112,26 +114,47 @@ void MotCode(Matrice A, Matrice H) {
 
             if(result%2 == 0) {
                 printf("%d", 0);
+                mot[w] = 0;
+            } else {
+                printf("%d", 1);
+                mot[w] = 1;
+                distance++;
+            }
+            result = 0;
+        }
+
+        if(distance < distance_min && distance != 0) {
+            distance_min = distance;
+        }
+
+        distance = 0;
+
+        printf(" -> ");
+
+        for(w = 0; w<A.x-1; w++) {
+            if(mot[w] == 1 && H.Matrice[0][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[1][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[2][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[3][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[4][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[5][w] == 1) result++;
+            if(mot[w] == 1 && H.Matrice[6][w] == 1) result++;
+
+            if(result%2 == 0) {
+                printf("%d", 0);
             } else {
                 printf("%d", 1);
             }
             result = 0;
         }
-
-        printf(" -> ");
-
-        //Syndrome
-
         printf("\n");
     }
-}
-
-void Syndrome(Matrice H) {
-
+    return distance_min;
 }
 
 int main() {
     Matrice A, Acontrol, H;
+    int distance_min;
 
     printf("Matrice Systématique :\n");
     A = MatriceVide(4, 7);
@@ -146,8 +169,11 @@ int main() {
     H = Transpose(Acontrol);
     DisplayMatrice(H);
 
-    printf("\n Matrice Syndrome :\n");
-    MotCode(A, H);
+    printf("Matrice Syndrome :\n");
+    distance_min = MotCode(A, H);
+    printf("Distance minimal : %d \n", distance_min);
+    printf("Nombre d'erreurs détectables : %d \n", distance_min-1);
+    printf("Nombre d'erreurs corrigeables : %d \n", (distance_min-1)/2);
 
     return 0;
 }
