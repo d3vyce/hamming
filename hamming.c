@@ -1,6 +1,5 @@
 #include "hamming.h"
 
-
 Matrice MatriceVide(int n, int m) {
     Matrice *A;
     int i, j, k;
@@ -11,12 +10,12 @@ Matrice MatriceVide(int n, int m) {
     A->y = m;
 
     A->Matrice = (int **) malloc(n*sizeof(int*));
-    for(k=0; k<n; k++) {
+    for(k = 0; k < n; k++) {
         A->Matrice[k] = (int *) malloc(m*sizeof(int));
     }
 
-    for(i=0; i<A->x; i++) {
-        for(j=0; j<A->y; j++) {
+    for(i = 0; i < A->x; i++) {
+        for(j = 0; j < A->y; j++) {
             A->Matrice[i][j] = 0;
         }
     }
@@ -27,8 +26,8 @@ Matrice MatriceVide(int n, int m) {
 void DisplayMatrice(Matrice A) {
     int i, j;
 
-    for(i=0; i<A.x; i++) {
-        for(j=0; j<A.y; j++) {
+    for(i = 0; i < A.x; i++) {
+        for(j = 0; j < A.y; j++) {
             printf("%d ", A.Matrice[i][j]);
         }
         printf("\n");
@@ -48,18 +47,17 @@ Matrice LireMatrice(const char * nom, Matrice A) {
 
 Matrice Control(Matrice A) {
     int i, j, k = 0, z, w = 0;
-    Matrice control = MatriceVide(3, 7);
+    Matrice control = MatriceVide(A.x-1, A.y);
 
-    for(i=0; i<A.x; i++) {
-        for(j=A.y-A.x+1; j<A.y; j++) {
-            //printf("%d-%d -> %d-%d \n", i, j, i, k); //DEBUG
+    for(i = 0; i < A.x; i++) {
+        for(j = A.y-A.x+1; j < A.y; j++) {
             control.Matrice[k][i] = A.Matrice[i][j];
             k++;
         }
         k = 0;
     }
 
-    for(z=A.y-A.x+1; z<A.y; z++) {
+    for(z = A.y-A.x+1; z < A.y; z++) {
         control.Matrice[w][z] = 1;
         w++;
     }
@@ -70,57 +68,104 @@ Matrice Control(Matrice A) {
 Matrice Transpose(Matrice Acontrol) {
     int i, j;
     Matrice H = MatriceVide(Acontrol.y, Acontrol.x);
-    for(i=0; i<Acontrol.y; i++) {
-        for(j=0; j<Acontrol.x; j++) {
+    
+    for(i = 0; i < Acontrol.y; i++) {
+        for(j = 0; j < Acontrol.x; j++) {
             H.Matrice[i][j] = Acontrol.Matrice[j][i];
         }
     }
     return H;
 }
 
-int MotCode(Matrice A, Matrice H) {
-    long int binary = 0;
-    int ligne = 2, i, j, remainder, k, result = 0, w, z, distance = 0;;
-    int distance_min = 99;
-    int l0, l1, l2, l3;
-    int mot[7];
+Matrice binaire(Matrice A) {
+    Matrice Binaire;
+    int i, ligne = 2, k, n, count = A.x-1;
 
-    for (i=1 ; i<A.x ; ++i) ligne = ligne*2;
+    for (i = 1 ; i < A.x ; ++i) ligne = ligne*2;
 
-    for(i=0; i < ligne; i++) {
-        k = i;
-        for(j = 1; k != 0; j = j * 10) {
-            remainder = k % 2;
-            k /= 2;
-            binary += remainder * j;
+    Binaire = MatriceVide(ligne, A.x);
+
+    for(i = 0; i < ligne; i++) {
+        for(n = i; n > 0; n = n >> 1) {
+            if(n & 1) {
+                Binaire.Matrice[i][count] = 1;
+            }
+            count--;
         }
+        count = A.x-1;
+    }
 
-        int l0 = binary/1000;
-        binary = binary%1000;
-        int l1 = binary/100;
-        binary = binary%100;
-        int l2 = binary/10;
-        binary = binary%10;
-        int l3 = binary;
-        binary = 0;
+    return Binaire;
+}
 
-        printf("%d%d%d%d -> ", l0, l1, l2, l3);
-        
-        for(w = 0; w<A.y; w++) {
-            if(l0 == 1 && A.Matrice[0][w] == 1) result++;
-            if(l1 == 1 && A.Matrice[1][w] == 1) result++;
-            if(l2 == 1 && A.Matrice[2][w] == 1) result++;
-            if(l3 == 1 && A.Matrice[3][w] == 1) result++;
+Matrice motcode(Matrice A, Matrice BlocBinaire) {
+    Matrice MotCode;
+    int i, j, k, result = 0;
 
-            if(result%2 == 0) {
-                printf("%d", 0);
-                mot[w] = 0;
-            } else {
-                printf("%d", 1);
-                mot[w] = 1;
-                distance++;
+    MotCode = MatriceVide(BlocBinaire.x, A.y);
+
+    for(i = 0; i < BlocBinaire.x; i++) {
+        for(j = 0; j < A.y; j++) {
+            for(k = 0; k < A.x; k++) {
+                if(BlocBinaire.Matrice[i][k] == 1 && A.Matrice[k][j] == 1) result++;
+            }
+
+            if(result%2 != 0) {
+                MotCode.Matrice[i][j] = 1;
+            }
+
+            result = 0;
+        }
+    }
+
+    return MotCode;
+}
+
+Matrice syndrome(Matrice MotCode, Matrice H, Matrice A) {
+    Matrice Syndrome = MatriceVide(MotCode.x, H.y);
+    int i, j, k, result = 0;
+
+    for(i = 0; i < MotCode.x; i++) {
+        for(j = 0; j<A.x-1; j++) {
+            for(k = 0; k<A.y; k++) {
+                if(MotCode.Matrice[i][j] == 1 && H.Matrice[k][j] == 1) result++;
+            }
+
+            if(result%2 != 0) {
+                Syndrome.Matrice[i][j] = 1;
             }
             result = 0;
+        }
+    }
+
+    return Syndrome;
+}
+
+void DisplayResult(Matrice BlocBinaire, Matrice MotCode, Matrice Syndrome) {
+    int i, j;
+
+    for(i = 0; i < BlocBinaire.x; i++) {
+        for(j = 0; j < BlocBinaire.y; j++) {
+            printf("%d", BlocBinaire.Matrice[i][j]);
+        }
+        printf(" | ");
+        for(j = 0; j < MotCode.y; j++) {
+            printf("%d", MotCode.Matrice[i][j]);
+        }
+        printf(" | ");
+        for(j = 0; j < Syndrome.y; j++) {
+            printf("%d", Syndrome.Matrice[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int distanceMin(Matrice MotCode) {
+    int i, j, distance_min = 99, distance = 0;
+
+    for(i = 0; i < MotCode.x; i++) {
+        for(j = 0; j < MotCode.y; j++) {
+            if(MotCode.Matrice[i][j] == 1) distance++;
         }
 
         if(distance < distance_min && distance != 0) {
@@ -128,32 +173,13 @@ int MotCode(Matrice A, Matrice H) {
         }
 
         distance = 0;
-
-        printf(" -> ");
-
-        for(w = 0; w<A.x-1; w++) {
-            if(mot[w] == 1 && H.Matrice[0][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[1][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[2][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[3][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[4][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[5][w] == 1) result++;
-            if(mot[w] == 1 && H.Matrice[6][w] == 1) result++;
-
-            if(result%2 == 0) {
-                printf("%d", 0);
-            } else {
-                printf("%d", 1);
-            }
-            result = 0;
-        }
-        printf("\n");
     }
+
     return distance_min;
 }
 
 int main() {
-    Matrice A, Acontrol, H;
+    Matrice A, Acontrol, H, BlocBinaire, MotCode, Syndrome;
     int distance_min;
 
     printf("Matrice Systématique :\n");
@@ -169,11 +195,16 @@ int main() {
     H = Transpose(Acontrol);
     DisplayMatrice(H);
 
-    printf("Matrice Syndrome :\n");
-    distance_min = MotCode(A, H);
-    printf("Distance minimal : %d \n", distance_min);
-    printf("Nombre d'erreurs détectables : %d \n", distance_min-1);
-    printf("Nombre d'erreurs corrigeables : %d \n", (distance_min-1)/2);
+    printf("\n Matrice Syndrome :\n");
+    BlocBinaire = binaire(A);
+    MotCode = motcode(A, BlocBinaire);
+    Syndrome = syndrome(MotCode, H, A);
+    DisplayResult(BlocBinaire, MotCode, Syndrome);
+
+    
+    printf("\nDistance minimal : %d \n", distanceMin(MotCode));
+    printf("Nombre d'erreurs détectables : %d \n", distanceMin(MotCode)-1);
+    printf("Nombre d'erreurs corrigeables : %d \n", (distanceMin(MotCode)-1)/2);
 
     return 0;
 }
